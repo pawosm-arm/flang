@@ -95,35 +95,9 @@ static INT xtimes[_N_WHO];
 static LOGICAL postprocessing = TRUE;
 
 /* Feature names for Fortran front-end */
-#if defined(TARGET_LINUX_X8664)
 static char *feature = "flang";
 static char *os = "lin";
 static char *accel = NULL;
-#elif defined(TARGET_WIN_X8664)
-static char *feature2 = "pgi-f95-win64";
-static char *feature = "pgfortran";
-static char *os = "win";
-static char *accel = NULL;
-#elif defined(TARGET_OSX_X8664)
-static char *feature2 = "pgi-f95-osx64";
-static char *feature = "pgfortran";
-static char *os = "osx";
-static char *accel = NULL;
-#elif defined(OSF86)
-static char *feature = "pgi-f95-osf32";
-static char *os = NULL;
-static char *accel = NULL;
-#elif defined(TARGET_LLVM_POWER)
-static char *feature2 = "pgi-f95-power";
-static char *feature = "pgfortran";
-static char *os = "lin";
-static char *accel = NULL;
-#else
-static char *feature2 = "pgi-f95";
-static char *feature = "pgfortran";
-static char *os = "lin";
-static char *accel = NULL;
-#endif
 
 /** Product name in debug output
  */
