@@ -113,7 +113,6 @@ static unsigned addressElementSize;
 
 #if DEBUG
 #include "mwd.h"
-CGDATA cg;
 #endif
 
 #define HOMEFORDEBUG(sptr) (XBIT(183, 8) && SCG(sptr) == SC_DUMMY)
