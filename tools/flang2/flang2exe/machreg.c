@@ -47,15 +47,8 @@ const int scratch_regs[] = SCRATCH_REGS;
 
 #if defined(TARGET_LLVM_ARM)
 
-/*  xmm0 --> xmm7 */
-int mr_arg_xr[MR_MAX_XREG_ARGS + 1] = {XR_XMM0, XR_XMM1, XR_XMM2, XR_XMM3,
-                                       XR_XMM4, XR_XMM5, XR_XMM6, XR_XMM7};
-
-/* return result registers */
-/* rax, rdx */
-int mr_res_ir[MR_MAX_IREG_RES + 1] = {IR_RAX, IR_RDX};
-/* xmm0, xmm1 */
-int mr_res_xr[MR_MAX_XREG_RES + 1] = {XR_XMM0, XR_XMM1};
+int mr_arg_xr[MR_MAX_XREG_ARGS + 1] = MR_ARG_XREGS;
+int mr_res_ir[MR_MAX_IREG_RES + 1] = MR_RES_IREGS;
 
 #elif defined(TARGET_LLVM_POWER)
 

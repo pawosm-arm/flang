@@ -15,243 +15,98 @@
  *
  */
 
-extern const int scratch_regs[];
-
-/* Define registers for x86-32.
+/* Warning! verify consistency of get_frame_off() function that uses this:
  */
+#define MEMARG_OFFSET 8
 
-/*------------------------------------------------------------------------
- * Registers must be listed with the callee-saved registers at the
- * end, and must be numbered as follows:
- *
- * non-callee-saved GP regs:  1 --> (IR_FIRST_CALLEE_SAVE - 1)
- * callee-saved GP regs:      IR_FIRST_CALLEE_SAVE --> IR_LAST_CALLEE_SAVE
- *
- * and similarly for the XM registers.  This numbering is assumed in
- * function 'save_callee_save_regs()'.
- *----------------------------------------------------------------------*/
-
-/*-------------
- * GP registers
- *-----------*/
+extern const int scratch_regs[];
 
 typedef enum {
   NO_REG = -1,
-  IR_EAX = 1,
-  IR_ECX,
-  IR_EDX,
-  IR_ESI, /* = 4; first callee-saved on x86-32 */
-  IR_EDI,
-  IR_EBX,
-  IR_EBP, /* = 7; last callee-saved on x86-32, i.e. 4 c.s. GP regs */
-  IR_ESP  /* = 8 */
+  IR_X0 = 1,    // param/result 1
+  IR_X1,        // param/result 2
+  IR_X2,        // param/result 3
+  IR_X3,        // param/result 4
+  IR_X4,        // param/result 5
+  IR_X5,        // param/result 6
+  IR_X6,        // param/result 7
+  IR_X7,        // param/result 8
+  IR_X8,        // indirect result location
+  IR_X9,        // tmp 1
+  IR_X10,       // tmp 2
+  IR_X11,       // tmp 3
+  IR_X12,       // tmp 4
+  IR_X13,       // tmp 5
+  IR_X14,       // tmp 6
+  IR_X15,       // tmp 7
+  IR_X16,       // IP0
+  IR_X17,       // IP1
+  IR_X18,       // context
+  IR_X19,       // callee-saved 1
+  IR_X20,       // callee-saved 2
+  IR_X21,       // callee-saved 3
+  IR_X22,       // callee-saved 4
+  IR_X23,       // callee-saved 5
+  IR_X24,       // callee-saved 6
+  IR_X25,       // callee-saved 7
+  IR_X26,       // callee-saved 8
+  IR_X27,       // callee-saved 9
+  IR_X28,       // callee-saved 10
+  IR_X29,       // frame pointer
+  IR_X30,       // link register
+  IR_X31        // stack pointer
 } IR_REGS;
 
-#define IR_FIRST_CALLEE_SAVE IR_ESI
-#define IR_LAST_CALLEE_SAVE IR_EBP
-
-#define GP_REG_NAMES                                                           \
-  {                                                                            \
-    "%badreg0", "%eax", "%ecx", "%edx", "%esi", "%edi", "%ebx", "%ebp", "%esp" \
-  }
-
-#define WORD_REG_NAMES                                                         \
-  {                                                                            \
-    "%badreg1", "%eax", "%ecx", "%edx", "%esi", "%edi", "%ebx", "%ebp", "%esp" \
-  }
-
-#define HALF_REG_NAMES                                                 \
-  {                                                                    \
-    "%badreg2", "%ax", "%cx", "%dx", "%si", "%di", "%bx", "%bp", "%sp" \
-  }
-
-#define BYTE_REG_NAMES                                              \
-  {                                                                 \
-    "%badreg3", "%al", "%cl", "%dl", "%badreg4", "%badreg5", "%bl", \
-        "%badreg6", "%badreg7"                                      \
-  }
-
-/* Synonyms for GP register symbols.
- */
-#define IR_RAX IR_EAX
-#define IR_RCX IR_ECX
-#define IR_RDX IR_EDX
-#define IR_RSI IR_ESI
-#define IR_RDI IR_EDI
-#define IR_RBX IR_EBX
-#define IR_FRAMEP IR_EBP
-#define IR_STACKP IR_ESP
-
-#define N_GP_REGS 8
-#define IR_FIRST 1
-#define IR_LAST 8
-
-/*---------------------------
- * XMM, YMM and ZMM registers
- *-------------------------*/
+#define IR_FIRST_CALLEE_SAVE IR_X19
+#define IR_LAST_CALLEE_SAVE IR_X28
 
 typedef enum {
-  XR_XMM0 = 1,
-  XR_XMM1,
-  XR_XMM2,
-  XR_XMM3,
-  XR_XMM4,
-  XR_XMM5,
-  XR_XMM6,
-  XR_XMM7
+  XR_V0 = 1,    // param 1
+  XR_V1,        // param 2
+  XR_V2,        // param 3
+  XR_V3,        // param 4
+  XR_V4,        // param 5
+  XR_V5,        // param 6
+  XR_V6,        // param 7
+  XR_V7,        // param 8
+  XR_V8,        // callee-saved 1
+  XR_V9,        // callee-saved 2
+  XR_V10,       // callee-saved 3
+  XR_V11,       // callee-saved 4
+  XR_V12,       // callee-saved 5
+  XR_V13,       // callee-saved 6
+  XR_V14,       // callee-saved 7
+  XR_V15,       // callee-saved 8
+  XR_V16,       // tmp 1
+  XR_V17,       // tmp 2
+  XR_V18,       // tmp 3
+  XR_V19,       // tmp 4
+  XR_V20,       // tmp 5
+  XR_V21,       // tmp 6
+  XR_V22,       // tmp 7
+  XR_V23,       // tmp 8
+  XR_V24,       // tmp 9
+  XR_V25,       // tmp 10
+  XR_V26,       // tmp 11
+  XR_V27,       // tmp 12
+  XR_V28,       // tmp 13
+  XR_V29,       // tmp 14
+  XR_V30,       // tmp 15
+  XR_V31        // tmp 16
 } XR_REGS;
 
-/* 32-bit ABI - no callee-saved xmm registers.  Note, the last
- * non-callee-saved XM register must be ( XR_FIRST_CALLEE_SAVE - 1 ).
- */
-#define XR_FIRST_CALLEE_SAVE 9 /* no callee-saved xmm regs */
-#define XR_LAST_CALLEE_SAVE 8
+#define XR_FIRST_CALLEE_SAVE XR_V8
+#define XR_LAST_CALLEE_SAVE XR_V15
 
-#define XMM_REG_NAMES                                                         \
-  {                                                                           \
-    "%badxmm", "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", \
-        "%xmm7"                                                               \
-  }
+#define MAX_N_REGS (IR_X31 + XR_V31)
 
-#define YMM_REG_NAMES                                                         \
-  {                                                                           \
-    "%badymm", "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", \
-        "%ymm7"                                                               \
-  }
-
-#define ZMM_REG_NAMES                                                         \
-  {                                                                           \
-    "%badzmm", "%zmm0", "%zmm1", "%zmm2", "%zmm3", "%zmm4", "%zmm5", "%zmm6", \
-        "%zmm7"                                                               \
-  }
-
-#define MAX_N_XMM_REGS 8
-#define XR_FIRST 1
-#define XR_LAST 8
-#define XR_NUM_REGS 8 /* only used in {hammer,llvm}/src/llvect.c */
-
-#define MAX_N_REGS (N_GP_REGS + MAX_N_XMM_REGS)
-
-/*------------------------------------------------------------------
- * Assembly code representation of register names.  These arrays are
- * defined and initialised in cgassem.c and read in assem.c,
- * cgassem.c, cggenai.c, exp_rte.c and xprolog.c.
- *----------------------------------------------------------------*/
-
-#define IR_NUM_NAMES N_GP_REGS + 1 /* only used in dwarf2.c! */
-
-extern char *gp_reg[N_GP_REGS + 1];      /* GP_REG_NAMES */
-extern char *word_reg[N_GP_REGS + 1];    /* WORD_REG_NAMES */
-extern char *half_reg[N_GP_REGS + 1];    /* HALF_REG_NAMES */
-extern char *byte_reg[N_GP_REGS + 1];    /* BYTE_REG_NAMES */
-extern char *xm_reg[MAX_N_XMM_REGS + 1]; /* XMM_REG_NAMES */
-extern char *ym_reg[MAX_N_XMM_REGS + 1]; /* YMM_REG_NAMES */
-extern char *zm_reg[MAX_N_XMM_REGS + 1]; /* ZMM_REG_NAMES */
-
-#define RAX gp_reg[IR_EAX]
-#define RBX gp_reg[IR_EBX]
-#define RCX gp_reg[IR_ECX]
-#define RDX gp_reg[IR_EDX]
-#define RDI gp_reg[IR_EDI]
-#define RSI gp_reg[IR_ESI]
-#define RBP gp_reg[IR_EBP]
-#define RSP gp_reg[IR_ESP]
-
-#define EAX word_reg[IR_EAX]
-#define EBX word_reg[IR_EBX]
-#define ECX word_reg[IR_ECX]
-#define EDX word_reg[IR_EDX]
-#define EDI word_reg[IR_EDI]
-#define ESI word_reg[IR_ESI]
-#define EBP word_reg[IR_EBP]
-#define ESP word_reg[IR_ESP]
-
-/* bobt, july 03 ------------------ I did up to here ..... */
-
-#define FR_RETVAL XR_XMM0
-#define SP_RETVAL XR_XMM0
-#define DP_RETVAL XR_XMM0
-#define CS_RETVAL XR_XMM0
-#define CD_RETVAL XR_XMM0
-
-#define IR_RETVAL IR_RAX
-#define AR_RETVAL IR_RAX
-#define MEMARG_OFFSET 8
-
-#define MR_MAX_IREG_ARGS 0
-#define MR_MAX_XREG_ARGS 8
-/*  not used to pass args */
-#define MR_MAX_FREG_ARGS 0
-
-#define MR_MAX_IREG_RES 2
-#define MR_MAX_XREG_RES 2
-
-/* Use macros ARG_IR, ARG_XR, etc.
- */
-extern int mr_arg_xr[MR_MAX_XREG_ARGS + 1]; /* defd in machreg.c */
-extern int mr_res_ir[MR_MAX_IREG_RES + 1];
-extern int mr_res_xr[MR_MAX_XREG_RES + 1];
-
-#define ARG_IR(i) (scratch_regs[i]) /* initialized in machreg.c */
-#define ARG_XR(i) (mr_arg_xr[i])
-#define RES_IR(i) (mr_res_ir[i])
-#define RES_XR(i) (mr_res_xr[i])
-
-#define AR(i) IR_RETVAL /* used only for pgftn/386 */
-#define IR(i) ARG_IR(i)
-#define SP(i) ARG_XR(i)
-#define DP(i) ARG_XR(i)
-#define ISP(i) (i + 100) /* not used? */
-#define IDP(i) (i + 100)
-
-/* Macro for defining alternate-return register for fortran subprograms.
- */
-#define IR_ARET IR_RETVAL
-
-/* Macros for unpacking/packing KR registers.
- */
-#define KR_LSH(i) (i)
-#define KR_MSH(i) (i)
-
-/* Macro for defining the KR register in which the value of a 64-bit integer
- * function is returned.
- */
-#define KR_RETVAL IR_RETVAL
-
-/* Define MR_UNIQ, the number of unique register classes for the machine.
- */
-#define MR_UNIQ 3
-
-#define GR_THRESHOLD 2
-
-/* Macros for defining the global registers in each of the unique register
- * classes.  For each global set, the lower and upper bounds are specified
- * in the form MR_L<i> .. MR_U<i>, where i = 1 to MR_UNIQ.
- */
-/***** i386 general purpose regs - allow 3 global *****/
-#define MR_L1 1
-#define MR_U1 3
-#define MR_MAX1 (MR_U1 - MR_L1 + 1)
-
-/***** i387 floating-point regs - allow 3 global *****/
-#define MR_L2 2
-#define MR_U2 4
-#define MR_MAX2 (MR_U2 - MR_L2 + 1)
-
-/***** i387 xmm floating-point regs - allow 3 global *****/
-#define MR_L3 2
-#define MR_U3 4
-#define MR_MAX3 (MR_U3 - MR_L3 + 1)
-
-/* Total number of globals: used by the optimizer for register history
- * tables.
- */
-#define MR_NUMGLB (MR_MAX1 + MR_MAX2 + MR_MAX3)
-
-/* Number of integer registers which are available for global
- * assignment when calls are or are not present.
- */
-#define MR_IR_AVAIL(c) 0
+#define FR_RETVAL XR_V0
+#define SP_RETVAL XR_V0
+#define DP_RETVAL XR_V0
+#define CS_RETVAL XR_V0
+#define CD_RETVAL XR_V0
+#define IR_RETVAL IR_X0
+#define AR_RETVAL IR_X0
 
 /* Machine Register Information -
  *
@@ -290,8 +145,6 @@ typedef struct {
   char next_global;        /* next global register # */
   char last_global;        /* last register # that can be global. */
   char nused;              /* number of global registers assigned */
-  const char mapbase;      /* offset in register bit vector where
-                              this class of MACH_REGS begins. */
   const char class;        /* class or type of register.  code generator needs
                               to know what kind of registers these represent.
                               'i' (integer), 'f' (float stk), 'x' (float xmm) */
@@ -313,11 +166,9 @@ typedef struct {
 
 /*****  Register Set Information for a block  *****/
 
-typedef struct {/* three -word bit-vector */
+typedef struct { /* three -word bit-vector */
   int xr;
 } RGSET;
-
-#define RGSET_XR(i) rgsetb.stg_base[i].xr
 
 typedef struct {
   RGSET *stg_base;
@@ -325,38 +176,39 @@ typedef struct {
   int stg_size;
 } RGSETB;
 
-/*****  External Data  Declarations  *****/
+#define SCRATCH_REGS { IR_X9, IR_X10, IR_X11, IR_X12, IR_X13, IR_X14, IR_X15 }
 
-extern REG reg[];
-extern RGSETB rgsetb;
+#define MR_MAX_XREG_ARGS 8
+#define MR_ARG_XREGS { XR_V0, XR_V1, XR_V2, XR_V3, XR_V4, XR_V5, XR_V6, XR_V7 }
 
-#define SCRATCH_REGS {IR_RAX, IR_RCX, IR_RDX}
+#define MR_MAX_IREG_RES 1
+#define MR_RES_IREGS { IR_X0 }
 
+#define MR_UNIQ 3
 #define MACH_REGS \
   { \
-    {1, 8, 8 /*TBD*/, MR_L1, MR_U1, MR_U1, MR_U1, 0, 0, 'i'},       /*  %r's  */ \
-    {1, 8, 8 /*TBD*/, MR_L2, MR_U2, MR_U2, MR_U2, 0, MR_MAX1, 'f'}, /*  %f's  */ \
-    {1, 8, 8 /*TBD*/, MR_L3, MR_U3, MR_U3, MR_U3, 0, (MR_MAX1 + MR_MAX2), \
-     'x'} /*  %f's  xmm */ \
+    { IR_X0, IR_X31, IR_X15, IR_X9, IR_X15, IR_X15, IR_X15, 0, 'i' }, \
+    { XR_V0, XR_V31, XR_V31, XR_V16, XR_V31, XR_V31, XR_V31, 0, 'f' }, \
+    { XR_V0, XR_V31, XR_V31, XR_V16, XR_V31, XR_V31, XR_V31, 0, 'x' } \
   }
 
 #define REGS(mach_regs) \
   { \
-    {6, 0, 0, 0, &((mach_regs)[0]), RCF_NONE}, /*  IR  */   \
-    {3, 0, 0, 0, &((mach_regs)[1]), RCF_NONE}, /*  SP  */   \
-    {3, 0, 0, 0, &((mach_regs)[1]), RCF_NONE}, /*  DP  */   \
-    {6, 0, 0, 0, &((mach_regs)[0]), RCF_NONE}, /*  AR  */   \
-    {3, 0, 0, 0, &((mach_regs)[0]), RCF_NONE}, /*  KR  */   \
-    {0, 0, 0, 0, 0, 0},                        /*  VECT  */ \
-    {0, 0, 0, 0, 0, 0},                        /*  QP    */ \
-    {3, 0, 0, 0, 0, RCF_NONE},                 /*  CSP   */ \
-    {3, 0, 0, 0, 0, RCF_NONE},                 /*  CDP   */ \
-    {0, 0, 0, 0, 0, 0},                        /*  CQP   */ \
-    {0, 0, 0, 0, 0, 0},                        /*  X87   */ \
-    {0, 0, 0, 0, 0, 0},                        /*  CX87  */ \
+    {12, 0, 0, 0, &((mach_regs)[0]), RCF_NONE}, /*  IR  */   \
+    {6, 0, 0, 0, &((mach_regs)[1]), RCF_NONE},  /*  SP  */   \
+    {6, 0, 0, 0, &((mach_regs)[1]), RCF_NONE},  /*  DP  */   \
+    {12, 0, 0, 0, &((mach_regs)[0]), RCF_NONE}, /*  AR  */   \
+    {6, 0, 0, 0, &((mach_regs)[0]), RCF_NONE},  /*  KR  */   \
+    {0, 0, 0, 0, 0, 0},                         /*  VECT  */ \
+    {0, 0, 0, 0, 0, 0},                         /*  QP    */ \
+    {6, 0, 0, 0, 0, RCF_NONE},                  /*  CSP   */ \
+    {6, 0, 0, 0, 0, RCF_NONE},                  /*  CDP   */ \
+    {0, 0, 0, 0, 0, 0},                         /*  CQP   */ \
+    {0, 0, 0, 0, 0, 0},                         /*  X87   */ \
+    {0, 0, 0, 0, 0, 0},                         /*  CX87  */ \
     /* the following will be mapped over SP and DP above */ \
-    {3, 0, 0, 0, &((mach_regs)[2]), RCF_NONE}, /*  SPXM  */ \
-    {3, 0, 0, 0, &((mach_regs)[2]), RCF_NONE}, /*  DPXM  */ \
+    {6, 0, 0, 0, &((mach_regs)[2]), RCF_NONE},  /*  SPXM  */ \
+    {6, 0, 0, 0, &((mach_regs)[2]), RCF_NONE},  /*  DPXM  */ \
   }
 
 #define MR_RESET_FRGLOBALS(mach_regs) \
@@ -365,6 +217,42 @@ extern RGSETB rgsetb;
     (mach_regs)[1].last_global = mach_reg[1].first_global - 1; \
     (mach_regs)[2].last_global = mach_reg[2].first_global - 1; \
   }
+
+extern int mr_arg_xr[MR_MAX_XREG_ARGS + 1]; // 1-based, element 0 never used
+extern int mr_res_ir[MR_MAX_IREG_RES + 1]; // 1-based, element 0 never used
+
+#define ARG_IR(i) (scratch_regs[i])
+#define ARG_XR(i) (mr_arg_xr[i])
+#define RES_IR(i) (mr_res_ir[i])
+
+#define AR(i) IR_RETVAL
+#define IR(i) ARG_IR(i)
+#define SP(i) ARG_XR(i)
+#define DP(i) ARG_XR(i)
+
+#define ISP(i) ((i) + 100) // suspicious
+#define IDP(i) ((i) + 100) // suspicious
+
+#define IR_ARET IR_RETVAL
+
+/* NOTE: for hammer, KR regs are just the IR regs.
+ */
+#define KR_LSH(i) (i)
+#define KR_MSH(i) (i)
+
+/* Macro for defining the KR register in which the value of a 64-bit integer
+ * function is returned.
+ */
+#define KR_RETVAL IR_RETVAL
+
+#define GR_THRESHOLD 2
+
+/*****  External Data  Declarations  *****/
+
+extern REG reg[];
+extern RGSETB rgsetb;
+
+#define RGSET_XR(i) rgsetb.stg_base[i].xr
 
 /*****  External Function Declarations  *****/
 
