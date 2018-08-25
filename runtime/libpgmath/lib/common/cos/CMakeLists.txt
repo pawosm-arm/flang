@@ -21,7 +21,7 @@ get_property(FLAGS GLOBAL PROPERTY "FLAGS_L1")
 set(SRCS)
 
 # Set source files, compiler flags and definitions
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" AND NOT ${LIBPGMATH_WITH_GENERIC})
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(COREAVX2_SRCS fd_cos_1_avx2.cpp fd_cos_2_avx2.cpp fd_cos_4_avx2.cpp)
     set_property(SOURCE ${COREAVX2_SRCS} APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-attributes -mtune=core-avx2 -march=core-avx2 ")
